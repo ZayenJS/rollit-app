@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PurchaseService {
   // Singleton
@@ -26,6 +27,11 @@ class PurchaseService {
       print("IAP non disponible");
       return;
     }
+
+    // Lecture des achats enregistrés localement
+    final prefs = await SharedPreferences.getInstance();
+    wtfPlusOwned = prefs.getBool(productWtfPlus) ?? false;
+    adsRemoved = prefs.getBool(productRemoveAds) ?? false;
 
     // Écoute des mises à jour d'achat
     _subscription = _iap.purchaseStream.listen(
@@ -95,14 +101,18 @@ class PurchaseService {
   }
 
   Future<void> _verifyAndApplyPurchase(PurchaseDetails purchase) async {
+    final prefs = await SharedPreferences.getInstance();
+
     switch (purchase.productID) {
       case productWtfPlus:
         wtfPlusOwned = true;
+        await prefs.setBool(productWtfPlus, true);
         print("WTF+ débloqué");
         break;
 
       case productRemoveAds:
         adsRemoved = true;
+        await prefs.setBool(productRemoveAds, true);
         print("Les pubs sont retirées");
         break;
     }

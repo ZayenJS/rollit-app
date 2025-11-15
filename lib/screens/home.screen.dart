@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:rollit/providers/category.provider.dart';
 import 'package:rollit/screens/result.screen.dart';
 import 'package:rollit/widgets/app_background.widget.dart';
-import 'package:rollit/widgets/circular_dice.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rollit/widgets/dice.widget.dart';
@@ -23,7 +22,7 @@ class HomeScreen extends ConsumerWidget {
           elevation: 0,
           actions: [
             IconButton(
-              icon: const Icon(Icons.menu, size: 28),
+              icon: const Icon(Icons.settings, size: 28),
               color: Colors.white,
               onPressed: () {
                 Navigator.pushNamed(context, '/settings');

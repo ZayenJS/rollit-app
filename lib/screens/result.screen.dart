@@ -5,7 +5,6 @@ import 'package:rollit/models/category.model.dart';
 import 'package:rollit/providers/action.provider.dart';
 import 'package:rollit/providers/category.provider.dart';
 import 'package:rollit/services/ads.service.dart';
-import 'package:rollit/services/data.service.dart';
 import 'package:flutter/material.dart';
 import 'package:rollit/widgets/app_background.widget.dart';
 import 'package:rollit/widgets/dice.widget.dart';
@@ -37,12 +36,12 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     // animation du lancer
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 500),
     );
 
     _animation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack,
+      curve: Curves.easeOutQuint,
     );
 
     _loadData();

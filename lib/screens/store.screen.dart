@@ -44,7 +44,7 @@ class StoreScreen extends StatelessWidget {
           _storeCard(
             title: "Défis Extrêmes",
             subtitle: "Bientôt disponible",
-            price: "Prochainement",
+            price: "-",
             color: const Color(0xFFFF8F5A),
             icon: "🔥",
             locked: true,

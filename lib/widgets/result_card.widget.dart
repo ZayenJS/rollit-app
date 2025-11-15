@@ -18,7 +18,7 @@ class ResultCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 28),
       padding: const EdgeInsets.all(26),
       constraints: BoxConstraints(
-        minHeight: MediaQuery.of(context).size.height * 0.45,
+        minHeight: MediaQuery.of(context).size.height * 0.425,
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
@@ -45,20 +45,21 @@ class ResultCard extends StatelessWidget {
       ),
       child: Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          spacing: 28,
           children: [
             // --- TITRE ---
             Text(
               title?.toUpperCase() ?? '',
               style: const TextStyle(
+                height: 1.3,
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
                 color: Color(0xFFFFE148), // jaune pastel
                 letterSpacing: 1.1,
               ),
             ),
-
-            const SizedBox(height: 28),
 
             // --- ICON EMBOSSED ---
             Container(
@@ -93,14 +94,12 @@ class ResultCard extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 30),
-
             // --- TEXTE D’ACTION ---
             Text(
               actionText ?? '',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 26,
+                fontSize: 24,
                 color: Colors.white,
                 fontWeight: FontWeight.w500,
                 height: 1.3,

@@ -2,6 +2,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rollit/models/category.model.dart';
+import 'package:rollit/services/preferences.service.dart';
+import 'package:rollit/services/sound.service.dart';
+import 'package:vibration/vibration.dart';
 
 class Dice extends StatefulWidget {
   final List<DiceCategory> categories;
@@ -54,7 +57,10 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
     }
   }
 
-  void roll() {
+  void roll() async {
+    await triggerDiceRollSound();
+    triggerHaptic();
+
     Future.microtask(() {
       if (widget.onRollStart != null) {
         widget.onRollStart!();
@@ -68,13 +74,27 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
 
     _controller.forward(from: 0);
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 900), () {
       if (widget.hideDiceOnComplete) {
         setState(() => _hideDice = true);
       }
 
       widget.onRollComplete(widget.categories[newIndex]);
     });
+  }
+
+  Future<void> triggerHaptic() async {
+    if (!PreferencesService.getVibration()) return;
+
+    if (await Vibration.hasVibrator()) {
+      Vibration.vibrate(duration: 200, amplitude: 255);
+    }
+  }
+
+  Future<void> triggerDiceRollSound() async {
+    if (!PreferencesService.getSound()) return;
+
+    await SoundService.play("dice-roll.mp3");
   }
 
   @override

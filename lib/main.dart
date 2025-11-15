@@ -5,6 +5,7 @@ import 'package:rollit/providers/category.provider.dart';
 import 'package:rollit/screens/home.screen.dart';
 import 'package:rollit/screens/settings.screen.dart';
 import 'package:rollit/services/ads.service.dart';
+import 'package:rollit/services/preferences.service.dart';
 import 'package:rollit/services/purchase.service.dart';
 import 'package:flutter/material.dart';
 
@@ -12,6 +13,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Future.wait([
+    PreferencesService.init(),
     PurchaseService.instance.init(),
     AdsService.instance.init(),
   ]);

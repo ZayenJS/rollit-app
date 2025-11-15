@@ -1,4 +1,5 @@
 import 'package:rollit/screens/store.screen.dart';
+import 'package:rollit/services/preferences.service.dart';
 import 'package:rollit/services/purchase.service.dart';
 import 'package:flutter/material.dart';
 
@@ -10,9 +11,15 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool soundEnabled = true;
-  bool vibrationEnabled = true;
-  bool frenchLanguage = true;
+  late bool soundEnabled;
+  late bool vibrationEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    soundEnabled = PreferencesService.getSound();
+    vibrationEnabled = PreferencesService.getVibration();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,84 +38,118 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        children: [
-          _sectionTitle("Préférences"),
+      body: Padding(
+        padding: const EdgeInsets.only(bottom: 40.0),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          children: [
+            _sectionTitle("Préférences"),
 
-          _switchTile(
-            icon: Icons.volume_up,
-            title: "Sons",
-            value: soundEnabled,
-            onChanged: (val) {
-              setState(() => soundEnabled = val);
-            },
-          ),
+            _switchTile(
+              icon: Icons.volume_up,
+              title: "Sons",
+              value: soundEnabled,
+              onChanged: (val) {
+                setState(() => soundEnabled = val);
+                PreferencesService.setSound(val);
+              },
+            ),
 
-          _switchTile(
-            icon: Icons.vibration,
-            title: "Vibration",
-            value: vibrationEnabled,
-            onChanged: (val) {
-              setState(() => vibrationEnabled = val);
-            },
-          ),
+            _switchTile(
+              icon: Icons.vibration,
+              title: "Vibration",
+              value: vibrationEnabled,
+              onChanged: (val) {
+                setState(() => vibrationEnabled = val);
+                PreferencesService.setVibration(val);
+              },
+            ),
 
-          const SizedBox(height: 6),
+            const SizedBox(height: 30),
 
-          _switchTile(
-            icon: Icons.language,
-            title: "Langue : ${frenchLanguage ? "Français" : "English"}",
-            value: frenchLanguage,
-            onChanged: (val) {
-              setState(() => frenchLanguage = val);
-            },
-          ),
+            _sectionTitle("Options"),
 
-          const SizedBox(height: 30),
+            _navTile(
+              icon: Icons.store,
+              title: "Boutique",
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StoreScreen()),
+                );
+              },
+            ),
 
-          _sectionTitle("Options"),
+            _navTile(
+              icon: Icons.block,
+              title: "Supprimer les pubs",
+              color: const Color(0xFF55E6C1),
+              onTap: () {
+                PurchaseService.instance.removeAds();
+              },
+            ),
 
-          _navTile(
-            icon: Icons.store,
-            title: "Boutique",
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const StoreScreen()),
-              );
-            },
-          ),
+            _navTile(
+              icon: Icons.refresh,
+              title: "Restaurer les achats",
+              onTap: () {
+                PurchaseService.instance.restorePurchases();
+              },
+            ),
 
-          _navTile(
-            icon: Icons.block,
-            title: "Supprimer les pubs",
-            color: const Color(0xFF55E6C1),
-            onTap: () {
-              PurchaseService.instance.removeAds();
-            },
-          ),
+            const SizedBox(height: 30),
 
-          _navTile(
-            icon: Icons.refresh,
-            title: "Restaurer les achats",
-            onTap: () {
-              PurchaseService.instance.restorePurchases();
-            },
-          ),
+            _sectionTitle("Informations"),
 
-          const SizedBox(height: 30),
+            _infoTile(
+              icon: Icons.info_outline,
+              title: "À propos",
+              onTap: () {
+                showAboutDialog(
+                  context: context,
+                  applicationName: "RollIt!",
+                  applicationVersion: "1.0.0",
+                  applicationIcon: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7F3DFF), Color(0xFF46167A)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [],
+                    ),
+                    child: Image.asset(
+                      "assets/images/dice/challenge.png",
+                      color: Colors.white,
+                    ),
+                  ),
+                  applicationLegalese: "",
+                  children: [
+                    const SizedBox(height: 16),
+                    Text(
+                      "RollIt! est un jeu simple et fun pour dynamiser vos soirées.\n\n"
+                      "Lancez le dé, découvrez une catégorie, et réalisez une action amusante : "
+                      "imitations, défis, questions fun, WTF ou mini-jeux.\n\n"
+                      "Aucune inscription, aucune donnée collectée : vos préférences restent "
+                      "localement sur votre appareil.\n\n"
+                      "Merci d’utiliser RollIt! 🎲✨\nAmusez-vous bien !",
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.35,
+                        color: Color(0xFF2C2C2C),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
 
-          _sectionTitle("Informations"),
-
-          _infoTile(
-            icon: Icons.info_outline,
-            title: "À propos",
-            subtitle: "Rollit – App de soirée fun & premium",
-          ),
-
-          _infoTile(icon: Icons.code, title: "Version", subtitle: "1.0.0"),
-        ],
+            _infoTile(icon: Icons.code, title: "Version", subtitle: "1.0.0"),
+          ],
+        ),
       ),
     );
   }
@@ -141,7 +182,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -159,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Switch(
             value: value,
-            activeColor: const Color(0xFF4C7DF0),
+            activeThumbColor: const Color(0xFF4C7DF0),
             onChanged: onChanged,
           ),
         ],
@@ -183,7 +224,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -212,7 +253,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _infoTile({
     required IconData icon,
     required String title,
-    required String subtitle,
+    String? subtitle,
+    Function? onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -222,34 +264,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Icon(icon, size: 26, color: Colors.grey.shade700),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
+      child: GestureDetector(
+        onTap: () {
+          if (onTap != null) {
+            onTap();
+          }
+        },
+        child: Row(
+          children: [
+            Icon(icon, size: 26, color: Colors.grey.shade700),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(height: 4),
+                if (subtitle != null)
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
