@@ -18,7 +18,7 @@ class AdsService {
   static String get interstitialAdUnitId {
     if (Platform.isAndroid) {
       // return "ca-app-pub-3940256099942544/1033173712"; // TEST Android
-      return "ca-app-pub-2859118390192986~6860672416"; // PROD Android
+      return "ca-app-pub-2859118390192986/5174279550"; // PROD Android
     } else if (Platform.isIOS) {
       // iOS version is not planned for production yet
       return "ca-app-pub-3940256099942544/4411468910"; // TEST iOS
