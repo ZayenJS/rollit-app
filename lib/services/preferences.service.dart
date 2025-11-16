@@ -15,7 +15,7 @@ class PreferencesService {
   }
 
   static bool getSound() {
-    return _prefs.getBool('sound') ?? false;
+    return _prefs.getBool('sound') ?? true;
   }
 
   static Future<void> setVibration(bool value) async {
@@ -23,7 +23,7 @@ class PreferencesService {
   }
 
   static bool getVibration() {
-    return _prefs.getBool('vibration') ?? false;
+    return _prefs.getBool('vibration') ?? true;
   }
 
   static bool getWtfPlusOwned() {
