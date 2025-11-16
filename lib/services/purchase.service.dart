@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:rollit/services/preferences.service.dart';
 
@@ -48,6 +47,7 @@ class PurchaseService {
     );
 
     await _loadProducts();
+    await restorePurchases();
   }
 
   Future<void> _loadProducts() async {
