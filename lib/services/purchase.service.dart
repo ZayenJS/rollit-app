@@ -22,7 +22,7 @@ class PurchaseService {
   // Statuts locaux
   bool wtfPlusOwned = false;
   bool challengeExtremeOwned = false;
-  bool adsRemoved = true;
+  bool adsRemoved = false;
 
   Future<void> init() async {
     // Lecture des achats enregistrés localement
@@ -51,7 +51,7 @@ class PurchaseService {
   }
 
   Future<void> _loadProducts() async {
-    const ids = {productWtfPlus, productRemoveAds};
+    const ids = {productWtfPlus, productRemoveAds, productChallengeExtreme};
 
     final response = await _iap.queryProductDetails(ids);
 

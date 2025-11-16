@@ -33,7 +33,7 @@
     {
         "id": "challenge_extreme",
         "label": "Défis Extrèmes",
-        "image_path": "assets/images/dice/challenge.png",
+        "image_path": "assets/images/dice/challenge_extreme.png",
         "is_iap": true
     }
 ]

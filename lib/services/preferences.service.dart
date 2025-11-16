@@ -103,6 +103,10 @@ class PreferencesService {
   }
 
   static bool challengeExtremeEnabled() {
+    if (!PurchaseService.instance.challengeExtremeOwned) {
+      return false;
+    }
+
     return _prefs.getBool('challenge_extreme_enabled') ?? true;
   }
 
@@ -125,18 +129,23 @@ class PreferencesService {
     if (imitationEnabled) {
       enabledCategories.add(DiceCategory.imitationCategory);
     }
+
     if (challengeEnabled) {
       enabledCategories.add(DiceCategory.challengeCategory);
     }
+
     if (funEnabled) {
       enabledCategories.add(DiceCategory.funCategory);
     }
+
     if (wtfEnabled) {
       enabledCategories.add(DiceCategory.wtfCategory);
     }
+
     if (wtfPlusEnabled) {
       enabledCategories.add(DiceCategory.wtfPlusCategory);
     }
+
     if (miniGameEnabled) {
       enabledCategories.add(DiceCategory.miniGameCategory);
     }

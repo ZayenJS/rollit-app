@@ -243,6 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: "Restaurer les achats",
                   onTap: () {
                     PurchaseService.instance.restorePurchases();
+                    setState(() {});
                   },
                 ),
 
