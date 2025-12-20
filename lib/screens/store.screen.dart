@@ -1,30 +1,47 @@
+import 'package:purchases_flutter/purchases_flutter.dart';
+import 'package:rollit/helpers/buy.dart';
+import 'package:rollit/providers/purchase.provider.dart';
 import 'package:rollit/services/purchase.service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class StoreScreen extends StatelessWidget {
+class StoreScreen extends ConsumerWidget {
   const StoreScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final removeAdsOwned = PurchaseService.instance.adsRemoved;
     final wtfPlusOwned = PurchaseService.instance.wtfPlusOwned;
     final challengeExtremeOwned =
         PurchaseService.instance.challengeExtremeOwned;
-
-    print(challengeExtremeOwned);
+    final purchaseNotifier = ref.read(purchaseControllerProvider.notifier);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FF),
       appBar: AppBar(
+        systemOverlayStyle: Theme.of(context).appBarTheme.systemOverlayStyle!
+            .copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+              systemStatusBarContrastEnforced: true,
+
+              systemNavigationBarColor: Color.fromARGB(255, 38, 10, 85),
+              systemNavigationBarContrastEnforced: true,
+              systemNavigationBarIconBrightness: Brightness.light,
+            ),
         title: const Text(
           "Boutique",
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 22),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            color: Colors.black,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 26),
+          icon: const Icon(Icons.arrow_back, size: 26, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -41,14 +58,18 @@ class StoreScreen extends StatelessWidget {
               _storeCard(
                 title: "WTF+",
                 subtitle: "20 actions WTF encore plus folles et absurdes.",
-                price: wtfPlusOwned ? "Acheté" : "1,99€",
+                entName: PurchaseService.entWtfPlus,
                 color: const Color(0xFF9A5DF5),
                 icon: "🤪",
                 owned: wtfPlusOwned,
-                onTap: () {
+                onTap: () async {
+                  debugPrint("__________________________");
+                  debugPrint(wtfPlusOwned.toString());
                   if (wtfPlusOwned) return;
 
-                  PurchaseService.instance.buyWtfPlus();
+                  handleBuy(context, () async {
+                    await purchaseNotifier.buy(PurchaseService.entWtfPlus);
+                  });
                 },
               ),
 
@@ -58,14 +79,18 @@ class StoreScreen extends StatelessWidget {
                 title: "Défis Extrêmes",
                 subtitle:
                     "20 Défis physiques et mentaux pour passer au niveau supérieur.",
-                price: "1,99€",
+                entName: PurchaseService.entChallengeExtreme,
                 color: const Color(0xFFFF8F5A),
                 icon: "🔥",
                 owned: challengeExtremeOwned,
                 onTap: () {
                   if (challengeExtremeOwned) return;
 
-                  PurchaseService.instance.buyChallengeExtreme();
+                  handleBuy(context, () async {
+                    await purchaseNotifier.buy(
+                      PurchaseService.entChallengeExtreme,
+                    );
+                  });
                 },
               ),
 
@@ -78,14 +103,16 @@ class StoreScreen extends StatelessWidget {
               _storeCard(
                 title: "Supprimer les pubs",
                 subtitle: "Plus aucune interruption",
-                price: removeAdsOwned ? "Acheté" : "3,99€",
+                entName: PurchaseService.entRemoveAds,
                 color: const Color(0xFF55E6C1),
                 icon: "🚫",
                 owned: removeAdsOwned,
                 onTap: () {
                   if (removeAdsOwned) return;
 
-                  PurchaseService.instance.removeAds();
+                  handleBuy(context, () async {
+                    await purchaseNotifier.buy(PurchaseService.entRemoveAds);
+                  });
                 },
               ),
             ],
@@ -109,7 +136,7 @@ class StoreScreen extends StatelessWidget {
   Widget _storeCard({
     required String title,
     required String subtitle,
-    required String price,
+    required String entName,
     required String icon,
     required Color color,
     bool owned = false,
@@ -172,13 +199,22 @@ class StoreScreen extends StatelessWidget {
             ),
             const SizedBox(width: 10.0),
             // Prix
-            Text(
-              price,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: owned ? Colors.grey.shade400 : Colors.grey.shade800,
-              ),
+            FutureBuilder<StoreProduct?>(
+              future: PurchaseService.instance.getProduct(entName),
+              builder: (context, snapshot) {
+                final price = owned
+                    ? "Acheté"
+                    : (snapshot.data?.priceString ?? "");
+
+                return Text(
+                  price,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: owned ? Colors.grey.shade400 : Colors.grey.shade800,
+                  ),
+                );
+              },
             ),
           ],
         ),

@@ -1,10 +1,12 @@
-import 'dart:math';
-
+import 'package:rollit/helpers/buy.dart';
+import 'package:rollit/helpers/url.dart';
 import 'package:rollit/models/dice_category.model.dart';
 import 'package:rollit/screens/store.screen.dart';
+import 'package:rollit/services/consent_manager.dart';
 import 'package:rollit/services/preferences.service.dart';
 import 'package:rollit/services/purchase.service.dart';
 import 'package:flutter/material.dart';
+import 'package:rollit/services/review.service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,6 +37,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         enabledCategories.length <= 1 &&
         enabledCategories.contains(categoryId)) {
       // Empêche de désactiver la dernière catégorie restante
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Au moins une catégorie doit être activée."),
@@ -63,15 +67,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 242, 242, 251),
       appBar: AppBar(
+        systemOverlayStyle: Theme.of(context).appBarTheme.systemOverlayStyle!
+            .copyWith(
+              statusBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.dark,
+              systemStatusBarContrastEnforced: true,
+
+              systemNavigationBarColor: Color.fromARGB(255, 38, 10, 85),
+              systemNavigationBarContrastEnforced: true,
+              systemNavigationBarIconBrightness: Brightness.light,
+            ),
         title: const Text(
           "Paramètres",
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 22),
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 22,
+            color: Colors.black,
+          ),
         ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, size: 26),
+          icon: const Icon(Icons.arrow_back, size: 26, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -234,15 +252,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: "Supprimer les pubs",
                     color: const Color(0xFF55E6C1),
                     onTap: () {
-                      PurchaseService.instance.removeAds();
+                      handleBuy(context, () async {
+                        await PurchaseService.instance.buy(
+                          PurchaseService.entRemoveAds,
+                        );
+                      });
                     },
                   ),
 
                 _navTile(
                   icon: Icons.refresh,
                   title: "Restaurer les achats",
-                  onTap: () {
-                    PurchaseService.instance.restorePurchases();
+                  onTap: () async {
+                    handleBuy(context, () async {
+                      await PurchaseService.instance.restore();
+                    });
+
                     setState(() {});
                   },
                 ),
@@ -250,6 +275,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 30),
 
                 _sectionTitle("Informations"),
+
+                _infoTile(
+                  icon: Icons.privacy_tip_outlined,
+                  title: "Politique de confidentialité",
+                  onTap: () {
+                    openUrl(
+                      "https://clearforgestudio.com/apps/roolit/privacy-policy",
+                    );
+                  },
+                ),
+
+                _infoTile(
+                  icon: Icons.privacy_tip_outlined,
+                  title: "Gérer vos choix publicitaires",
+                  onTap: () => ConsentManager.instance.showPrivacyOptionsForm(),
+                ),
+
+                _infoTile(
+                  icon: Icons.star_rate_rounded,
+                  title: "Noter l’application",
+                  onTap: () async {
+                    await ReviewService.markAsAsked();
+                    await ReviewService.requestReview();
+                  },
+                ),
 
                 _infoTile(
                   icon: Icons.info_outline,
@@ -411,51 +461,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required String title,
     String? subtitle,
-    Function? onTap,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+        onTap: onTap,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: GestureDetector(
-        onTap: () {
-          if (onTap != null) {
-            onTap();
-          }
-        },
-        child: Row(
-          children: [
-            Icon(icon, size: 26, color: Colors.grey.shade700),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
+          child: Row(
+            children: [
+              Icon(icon, size: 26, color: Colors.grey.shade700),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(height: 4),
-                if (subtitle != null)
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                  ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );

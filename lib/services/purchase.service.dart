@@ -1,149 +1,107 @@
-import 'dart:async';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:rollit/services/preferences.service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 
 class PurchaseService {
-  // Singleton
   static final PurchaseService instance = PurchaseService._internal();
   PurchaseService._internal();
 
-  // Produits disponibles sur Google Play
-  static const String productWtfPlus = "wtf_plus";
-  static const String productChallengeExtreme = "challenge_extreme";
-  static const String productRemoveAds = "remove_ads";
+  // Entitlements (clé RevenueCat)
+  static const String entWtfPlus = "wtf_plus_access";
+  static const String entChallengeExtreme = "challenge_extreme_access";
+  static const String entRemoveAds = "remove_ads_access";
 
-  final InAppPurchase _iap = InAppPurchase.instance;
-  late StreamSubscription<List<PurchaseDetails>> _subscription;
-
-  // Liste des produits récupérés sur Google Play
-  List<ProductDetails> products = [];
-
-  // Statuts locaux
   bool wtfPlusOwned = false;
   bool challengeExtremeOwned = false;
   bool adsRemoved = false;
 
+  static const String _androidApiKey = String.fromEnvironment(
+    "REVENUECAT_ANDROID_KEY",
+    defaultValue: "",
+  );
+  static const String _iosApiKey = String.fromEnvironment(
+    "REVENUECAT_IOS_KEY",
+    defaultValue: "",
+  );
+
+  String? _currentApiKey() {
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return _androidApiKey;
+      case TargetPlatform.iOS:
+        return _iosApiKey;
+      default:
+        return null;
+    }
+  }
+
   Future<void> init() async {
-    // Lecture des achats enregistrés localement
-    wtfPlusOwned = PreferencesService.getWtfPlusOwned();
-    challengeExtremeOwned = PreferencesService.getChallengeExtremeOwned();
-    adsRemoved = PreferencesService.getAdsRemoved();
-
-    final bool available = await _iap.isAvailable();
-    if (!available) {
-      print("IAP non disponible");
-      return;
+    final apiKey = _currentApiKey();
+    if (apiKey == null) {
+      throw Exception(
+        "Clé API RevenueCat non définie pour cette plateforme: $defaultTargetPlatform",
+      );
     }
 
-    // Écoute des mises à jour d'achat
-    _subscription = _iap.purchaseStream.listen(
-      (purchases) {
-        _handlePurchaseUpdates(purchases);
-      },
-      onDone: () => _subscription.cancel(),
-      onError: (error) {
-        print("Erreur dans purchaseStream: $error");
-      },
+    await Purchases.configure(PurchasesConfiguration(apiKey));
+
+    await refreshEntitlements();
+  }
+
+  // 🔄 Rafraîchir l’état premium
+  Future<void> refreshEntitlements() async {
+    final info = await Purchases.getCustomerInfo();
+    final active = info.entitlements.active;
+
+    wtfPlusOwned = active.containsKey(entWtfPlus);
+    challengeExtremeOwned = active.containsKey(entChallengeExtreme);
+    adsRemoved =
+        active.containsKey(entRemoveAds) ||
+        wtfPlusOwned ||
+        challengeExtremeOwned;
+  }
+
+  // 💳 Achat via offering
+  Future<void> buy(String entitlementKey) async {
+    final offerings = await Purchases.getOfferings();
+    final offering = offerings.current;
+
+    if (offering == null) {
+      throw Exception("Aucune offering disponible");
+    }
+
+    final package = offering.availablePackages.firstWhere(
+      (p) =>
+          p.storeProduct.identifier.contains(entitlementKey.split('_').first),
+      orElse: () => throw Exception("Produit non trouvé"),
     );
 
-    await _loadProducts();
-    await restorePurchases();
+    final result = await Purchases.purchase(PurchaseParams.package(package));
+    if (result.customerInfo.entitlements.active.isEmpty) {
+      throw Exception("Achat échoué ou annulé");
+    }
+    await refreshEntitlements();
   }
 
-  Future<void> _loadProducts() async {
-    const ids = {productWtfPlus, productRemoveAds, productChallengeExtreme};
-
-    final response = await _iap.queryProductDetails(ids);
-
-    if (response.notFoundIDs.isNotEmpty) {
-      print("Produits introuvables: ${response.notFoundIDs}");
-    }
-
-    if (response.error != null) {
-      print("Erreur QueryProductDetails: ${response.error}");
-    }
-
-    products = response.productDetails;
+  // 🔁 Restore (facultatif, souvent automatique)
+  Future<void> restore() async {
+    await Purchases.restorePurchases();
+    await refreshEntitlements();
   }
 
-  // ACHATS -----------------------------------------------------------------
+  Future<StoreProduct?> getProduct(String entitlementKey) async {
+    final offerings = await Purchases.getOfferings();
+    final offering = offerings.current;
 
-  Future<void> buyWtfPlus() async {
-    final product = products.firstWhere(
-      (p) => p.id == productWtfPlus,
-      orElse: () => throw Exception("Produit WTF+ introuvable"),
+    if (offering == null) {
+      throw Exception("Aucune offering disponible");
+    }
+
+    final package = offering.availablePackages.firstWhere(
+      (p) =>
+          p.storeProduct.identifier.contains(entitlementKey.split('_').first),
+      orElse: () => throw Exception("Produit non trouvé"),
     );
 
-    final details = PurchaseParam(productDetails: product);
-    await _iap.buyNonConsumable(purchaseParam: details);
-  }
-
-  Future<void> buyChallengeExtreme() async {
-    final product = products.firstWhere(
-      (p) => p.id == productChallengeExtreme,
-      orElse: () => throw Exception("Produit Challenge Extrême introuvable"),
-    );
-
-    final details = PurchaseParam(productDetails: product);
-    await _iap.buyNonConsumable(purchaseParam: details);
-  }
-
-  Future<void> removeAds() async {
-    final product = products.firstWhere(
-      (p) => p.id == productRemoveAds,
-      orElse: () => throw Exception("Produit Remove Ads introuvable"),
-    );
-
-    final details = PurchaseParam(productDetails: product);
-    await _iap.buyNonConsumable(purchaseParam: details);
-  }
-
-  // GESTION DES MISES À JOUR ----------------------------------------------
-
-  void _handlePurchaseUpdates(List<PurchaseDetails> purchases) {
-    for (final purchase in purchases) {
-      if (purchase.status == PurchaseStatus.purchased ||
-          purchase.status == PurchaseStatus.restored) {
-        _verifyAndApplyPurchase(purchase);
-      }
-
-      if (purchase.pendingCompletePurchase) {
-        _iap.completePurchase(purchase);
-      }
-    }
-  }
-
-  Future<void> _verifyAndApplyPurchase(PurchaseDetails purchase) async {
-    switch (purchase.productID) {
-      case productWtfPlus:
-        wtfPlusOwned = true;
-        await PreferencesService.setWtfPlusOwned(true);
-        print("WTF+ débloqué");
-        break;
-
-      case productChallengeExtreme:
-        challengeExtremeOwned = true;
-        await PreferencesService.setChallengeExtremeOwned(true);
-        print("Challenge Extrême débloqué");
-        break;
-
-      case productRemoveAds:
-        adsRemoved = true;
-        await PreferencesService.setAdsRemoved(true);
-        print("Les pubs sont retirées");
-        break;
-    }
-  }
-
-  // Récupération lors d’une réinstallation -------------------------------
-
-  Future<void> restorePurchases() async {
-    await _iap.restorePurchases();
-  }
-
-  // Nettoyage --------------------------------------------------------------
-
-  void dispose() {
-    _subscription.cancel();
+    return package.storeProduct;
   }
 }

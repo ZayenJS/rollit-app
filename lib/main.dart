@@ -1,22 +1,53 @@
+import 'dart:developer';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:rollit/providers/action.provider.dart';
 import 'package:rollit/providers/category.provider.dart';
 import 'package:rollit/screens/home.screen.dart';
 import 'package:rollit/screens/settings.screen.dart';
-import 'package:rollit/services/ads.service.dart';
+import 'package:rollit/services/consent_manager.dart';
 import 'package:rollit/services/preferences.service.dart';
 import 'package:rollit/services/purchase.service.dart';
 import 'package:flutter/material.dart';
+import 'package:rollit/services/review.service.dart';
+import 'package:rollit/utils/cache.dart';
+import 'package:flutter/services.dart';
+
+const uiStyle = SystemUiOverlayStyle(
+  statusBarColor: Colors.transparent,
+  statusBarIconBrightness: Brightness.light,
+  systemStatusBarContrastEnforced: true,
+
+  systemNavigationBarContrastEnforced: false,
+  systemNavigationBarIconBrightness: Brightness.light,
+);
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await PreferencesService.init();
+
   await Future.wait([
+    clearTempCache(),
     PurchaseService.instance.init(),
-    AdsService.instance.init(),
+    ConsentManager.instance.gatherConsentAndInitAdsIfAllowed(),
+    ReviewService.registerSession(),
   ]);
+
+  if (kDebugMode) {
+    log('🛠️ Debug mode is ON');
+  }
+
+  FlutterNativeSplash.remove();
 
   runApp(ProviderScope(child: const RollitApp()));
 }
@@ -34,6 +65,8 @@ class _RollitAppState extends ConsumerState<RollitApp> {
     super.initState();
     ref.read(categoryProvider.notifier).loadCategories();
     ref.read(actionProvider.notifier).loadActions();
+
+    SystemChrome.setSystemUIOverlayStyle(uiStyle);
   }
 
   @override
@@ -46,6 +79,12 @@ class _RollitAppState extends ConsumerState<RollitApp> {
         scaffoldBackgroundColor: const Color(0xFFF7F8FF),
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          systemOverlayStyle: uiStyle,
+        ),
       ),
       routes: {'/settings': (_) => const SettingsScreen()},
       home: FutureBuilder(

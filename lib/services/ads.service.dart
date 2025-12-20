@@ -45,7 +45,6 @@ class AdsService {
       print("Ads disabled (Remove Ads acheté)");
       return;
     }
-
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
@@ -86,25 +85,28 @@ class AdsService {
 
   // AFFICHAGE ----------------------------------------------------------------
 
-  void tryShowInterstitial() {
+  Future<bool> tryShowInterstitial() async {
     if (PurchaseService.instance.adsRemoved) {
       print("Ads disabled (Remove Ads)");
-      return;
+      return false;
     }
 
     actionCount++;
 
-    if (actionCount < showEvery) return; // pas encore
+    if (actionCount < showEvery) return false; // pas encore
 
     // reset compteur
     actionCount = 0;
 
     if (_interstitialAd != null) {
       print("SHOWING interstitial");
-      _interstitialAd!.show();
+      await _interstitialAd!.show();
+      await Future.delayed(const Duration(milliseconds: 500));
+      return true;
     } else {
       print("Interstitial not ready, loading...");
       _createInterstitialAd();
+      return false;
     }
   }
 

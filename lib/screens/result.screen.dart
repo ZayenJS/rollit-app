@@ -4,7 +4,6 @@ import 'package:rollit/models/dice_action.model.dart';
 import 'package:rollit/models/dice_category.model.dart';
 import 'package:rollit/providers/action.provider.dart';
 import 'package:rollit/providers/category.provider.dart';
-import 'package:rollit/services/ads.service.dart';
 import 'package:flutter/material.dart';
 import 'package:rollit/widgets/app_background.widget.dart';
 import 'package:rollit/widgets/dice.widget.dart';
@@ -69,11 +68,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
     _controller.forward(from: 0);
   }
 
-  void _roll() {
-    AdsService.instance.tryShowInterstitial();
-
-    _controller.forward(from: 0);
-
+  void _roll() async {
     final category =
         ref.read(categoryProvider).currentCategory ??
         _categories[_random.nextInt(_categories.length)];
@@ -101,6 +96,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen>
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           elevation: 0,
+          systemOverlayStyle: Theme.of(context).appBarTheme.systemOverlayStyle,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, size: 28),
             color: Colors.white,

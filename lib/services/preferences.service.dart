@@ -5,6 +5,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferencesService {
   static late SharedPreferences _prefs;
 
+  // paywall keys
+  static const String _removeAdsPaywallShowedKey = 'remove_ads_paywall_showed';
+  static const String _paywallShowedKey = 'paywall_showed';
+  // review keys
+  static const _reviewAskedKey = 'review_asked';
+  static const _reviewLastAskKey = 'review_last_ask';
+  static const _reviewSessionCountKey = 'review_session_count';
+  static const _reviewRollCountKey = 'review_roll_count';
+
   /// Initialisation à faire au démarrage de l’app
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
@@ -27,27 +36,27 @@ class PreferencesService {
   }
 
   static bool getWtfPlusOwned() {
-    return _prefs.getBool(PurchaseService.productWtfPlus) ?? false;
+    return _prefs.getBool(PurchaseService.entWtfPlus) ?? false;
   }
 
   static Future<void> setWtfPlusOwned(bool value) async {
-    await _prefs.setBool(PurchaseService.productWtfPlus, value);
+    await _prefs.setBool(PurchaseService.entWtfPlus, value);
   }
 
   static bool getChallengeExtremeOwned() {
-    return _prefs.getBool('challenge_extreme_owned') ?? false;
+    return _prefs.getBool(PurchaseService.entChallengeExtreme) ?? false;
   }
 
   static Future<void> setChallengeExtremeOwned(bool value) async {
-    await _prefs.setBool('challenge_extreme_owned', value);
+    await _prefs.setBool(PurchaseService.entChallengeExtreme, value);
   }
 
   static bool getAdsRemoved() {
-    return _prefs.getBool(PurchaseService.productRemoveAds) ?? false;
+    return _prefs.getBool(PurchaseService.entRemoveAds) ?? false;
   }
 
   static Future<void> setAdsRemoved(bool value) async {
-    await _prefs.setBool(PurchaseService.productRemoveAds, value);
+    await _prefs.setBool(PurchaseService.entRemoveAds, value);
   }
 
   static bool imitationEnabled() {
@@ -114,6 +123,54 @@ class PreferencesService {
     await _prefs.setBool('challenge_extreme_enabled', value);
   }
 
+  static int getSessionsCount() {
+    return _prefs.getInt(_reviewSessionCountKey) ?? 0;
+  }
+
+  static Future<void> setSessionsCount(int value) async {
+    await _prefs.setInt(_reviewSessionCountKey, value);
+  }
+
+  static int getRollsCount() {
+    return _prefs.getInt(_reviewRollCountKey) ?? 0;
+  }
+
+  static Future<void> setRollsCount(int value) async {
+    await _prefs.setInt(_reviewRollCountKey, value);
+  }
+
+  static bool getHasAskedForReview() {
+    return _prefs.getBool(_reviewAskedKey) ?? false;
+  }
+
+  static Future<void> setHasAskedForReview(bool value) async {
+    await _prefs.setBool(_reviewAskedKey, value);
+  }
+
+  static int? getReviewLastAskMillis() {
+    return _prefs.getInt(_reviewLastAskKey);
+  }
+
+  static Future<void> setReviewLastAskMillis(int value) async {
+    await _prefs.setInt(_reviewLastAskKey, value);
+  }
+
+  static bool hasShownRemoveAdsPaywall() {
+    return _prefs.getBool(_removeAdsPaywallShowedKey) ?? false;
+  }
+
+  static Future<void> setHasShownRemoveAdsPaywall(bool value) async {
+    await _prefs.setBool(_removeAdsPaywallShowedKey, value);
+  }
+
+  static bool hasShownPaywall() {
+    return _prefs.getBool(_paywallShowedKey) ?? false;
+  }
+
+  static Future<void> setHasShownPaywall(bool value) async {
+    await _prefs.setBool(_paywallShowedKey, value);
+  }
+
   static List<String> getEnabledCategories() {
     final imitationEnabled = PreferencesService.imitationEnabled();
     final challengeEnabled = PreferencesService.challengeEnabled();
@@ -155,5 +212,9 @@ class PreferencesService {
     }
 
     return enabledCategories;
+  }
+
+  static Future<void> reset() async {
+    await _prefs.clear();
   }
 }

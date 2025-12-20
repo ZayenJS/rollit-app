@@ -19,6 +19,12 @@ class HomeScreen extends ConsumerWidget {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
+          systemOverlayStyle: Theme.of(context).appBarTheme.systemOverlayStyle!
+              .copyWith(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+                systemStatusBarContrastEnforced: true,
+              ),
           backgroundColor: Colors.transparent,
           elevation: 0,
           actions: [

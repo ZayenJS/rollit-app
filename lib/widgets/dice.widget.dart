@@ -1,12 +1,20 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:rollit/helpers/rate.dart';
 import 'package:rollit/models/dice_category.model.dart';
+import 'package:rollit/providers/dice.provider.dart';
+import 'package:rollit/providers/purchase.provider.dart';
+import 'package:rollit/services/ads.service.dart';
 import 'package:rollit/services/preferences.service.dart';
+import 'package:rollit/services/review.service.dart';
 import 'package:rollit/services/sound.service.dart';
+import 'package:rollit/widgets/paywall_sheet.dart';
+import 'package:rollit/widgets/remove_ads_paywall.dart';
 import 'package:vibration/vibration.dart';
 
-class Dice extends StatefulWidget {
+class Dice extends ConsumerStatefulWidget {
   final List<DiceCategory> categories;
   final double size;
   final ValueChanged<DiceCategory> onRollComplete;
@@ -31,16 +39,17 @@ class Dice extends StatefulWidget {
   });
 
   @override
-  State<Dice> createState() => _DiceState();
+  ConsumerState<Dice> createState() => _DiceState();
 }
 
-class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
+class _DiceState extends ConsumerState<Dice>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _spin;
   bool _isRolling = false;
   bool _hideDice = false;
 
-  int _currentLogicalIndex = -1; // -1 → on n’a pas encore roll
+  int _currentLogicalIndex = -1;
 
   @override
   void initState() {
@@ -58,8 +67,25 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
     }
   }
 
-  void roll() async {
+  @override
+  void didUpdateWidget(covariant Dice oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (_currentLogicalIndex >= widget.categories.length) {
+      setState(() => _currentLogicalIndex = -1);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void roll(BuildContext context) async {
     if (_isRolling) return;
+    if (widget.categories.isEmpty) return;
+
     _isRolling = true;
 
     await triggerDiceRollSound();
@@ -73,19 +99,58 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
 
     final total = widget.categories.length;
     final newIndex = Random().nextInt(total);
+    final selected = widget.categories[newIndex];
 
+    if (!mounted) return;
     setState(() => _currentLogicalIndex = newIndex);
 
     _controller.forward(from: 0);
 
-    Future.delayed(const Duration(milliseconds: 900), () {
-      if (widget.hideDiceOnComplete) {
-        setState(() => _hideDice = true);
-      }
+    await Future.delayed(const Duration(milliseconds: 900));
 
-      widget.onRollComplete(widget.categories[newIndex]);
-      _isRolling = false;
-    });
+    if (!mounted) return;
+
+    if (widget.hideDiceOnComplete) {
+      setState(() => _hideDice = true);
+    }
+
+    _isRolling = false;
+
+    final updatedRollsCount = PreferencesService.getRollsCount() + 1;
+    PreferencesService.setRollsCount(updatedRollsCount);
+
+    final showed = await AdsService.instance.tryShowInterstitial();
+
+    if (showed && !PreferencesService.hasShownRemoveAdsPaywall()) {
+      if (mounted) {
+        PreferencesService.setHasShownRemoveAdsPaywall(true);
+        if (context.mounted) {
+          await showModalBottomSheet<bool>(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            useSafeArea: false,
+            builder: (_) => const RemoveAdsPaywall(),
+          );
+        }
+      }
+    }
+
+    final diceState = ref.read(diceProvider);
+    if (updatedRollsCount == diceState.maxRollsBeforePaywall && mounted) {
+      PreferencesService.setHasShownPaywall(true);
+      if (context.mounted) {
+        await showModalBottomSheet<bool>(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (_) => const PaywallSheet(),
+        );
+      }
+    }
+
+    widget.onRollComplete(selected);
   }
 
   Future<void> triggerHaptic() async {
@@ -104,12 +169,27 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final displayedImage = _currentLogicalIndex == -1
-        ? widget.initialFacePath
-        : widget.categories[_currentLogicalIndex].imagePath;
+    final hasValidIndex =
+        _currentLogicalIndex >= 0 &&
+        _currentLogicalIndex < widget.categories.length;
+
+    final displayedImage = hasValidIndex
+        ? widget.categories[_currentLogicalIndex].imagePath
+        : widget.categories[0].imagePath;
 
     return GestureDetector(
-      onTap: roll,
+      onTap: () async {
+        final canAsk = await ReviewService.canAskForReview();
+        if (!context.mounted) return;
+        if (canAsk) {
+          return await showRateAppDialog(context);
+        }
+
+        setState(() {
+          _hideDice = false;
+        });
+        roll(context);
+      },
       child: AnimatedBuilder(
         animation: _spin,
         builder: (_, child) {
@@ -145,11 +225,18 @@ class _DiceState extends State<Dice> with SingleTickerProviderStateMixin {
 
               if (!_hideDice) const SizedBox(height: 40),
               GestureDetector(
-                onTap: () {
+                onTap: () async {
+                  final canAsk = await ReviewService.canAskForReview();
+                  if (!context.mounted) return;
+                  if (canAsk) {
+                    return await showRateAppDialog(context);
+                  }
+
                   setState(() {
                     _hideDice = false;
                   });
-                  roll();
+
+                  roll(context);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(

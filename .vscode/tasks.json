@@ -1,0 +1,16 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Android AppBundle (Release)",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "flutter clean && flutter pub get && flutter build appbundle --dart-define=REVENUECAT_ANDROID_KEY=goog_szpCTGDwZVBQAILjcecbxflKsaS"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
