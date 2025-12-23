@@ -6,6 +6,17 @@
         "title": "Add Players",
         "player_name": "Player Name",
         "choose_avatar": "Choose Avatar",
+        "choose_avatar_title": "Choose an avatar",
+        "confirm_avatar": "Confirm",
+        "max_players_reached": "Team’s full — ready to kick off?",
+        "edit": {
+            "delete": "Delete",
+            "save": "Save"
+        },
+        "players_label": "Players",
+        "empty_title": "Add your first players",
+        "empty_subtitle": "Tap the + to start, then add a name and avatar.",
+        "max_players_hint": "Up to 8 players for a smooth game.",
         "start_game": "Start Game"
     },
     "remove_ads_paywall": {

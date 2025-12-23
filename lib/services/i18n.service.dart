@@ -25,6 +25,15 @@ class AddPlayersKeys {
   final String title = "add_players.title";
   final String playerName = "add_players.player_name";
   final String chooseAvatar = "add_players.choose_avatar";
+  final String chooseAvatarTitle = "add_players.choose_avatar_title";
+  final String confirmAvatar = "add_players.confirm_avatar";
+  final String maxPlayersReached = "add_players.max_players_reached";
+  final String editDelete = "add_players.edit.delete";
+  final String editSave = "add_players.edit.save";
+  final String playersLabel = "add_players.players_label";
+  final String emptyTitle = "add_players.empty_title";
+  final String emptySubtitle = "add_players.empty_subtitle";
+  final String maxPlayersHint = "add_players.max_players_hint";
   final String startGame = "add_players.start_game";
 }
 

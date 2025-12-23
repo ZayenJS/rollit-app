@@ -6,6 +6,17 @@
         "title": "Ajouter des joueurs",
         "player_name": "Nom du joueur",
         "choose_avatar": "Choisir un avatar",
+        "choose_avatar_title": "Choisir un avatar",
+        "confirm_avatar": "Valider",
+        "max_players_reached": "L’équipe est au complet — on démarre ?",
+        "edit": {
+            "delete": "Supprimer",
+            "save": "Enregistrer"
+        },
+        "players_label": "Joueurs",
+        "empty_title": "Ajoute tes premiers joueurs",
+        "empty_subtitle": "Appuie sur le + pour commencer, puis ajoute un nom et un avatar.",
+        "max_players_hint": "Jusqu’à 8 joueurs pour une partie fluide.",
         "start_game": "Lancer la partie"
     },
     "remove_ads_paywall": {
